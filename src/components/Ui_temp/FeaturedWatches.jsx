@@ -1,167 +1,119 @@
 import React, { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  MessageCircle,
-  ChevronDown,
-  ChevronUp,
-  Star,
-  Facebook,
-} from "lucide-react";
+import { motion } from "framer-motion";
+import logo from "@/assets/logo.jpg";
 import { supabase } from "@/supabaseClient";
-import { formatPrice } from "@/utils/formatCurrency";
 
-const FeaturedWatches = () => {
-  const [watches, setWatches] = useState([]);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
+const HeroSplit = () => {
+  // Cấu trúc state mới: Lưu cả url và position
+  const [leftData, setLeftData] = useState({
+    url: "https://images.unsplash.com/photo-1614164185128-e4ec99c436d7?q=80&w=1000",
+    pos: "center",
+  });
+  const [rightData, setRightData] = useState({
+    url: "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=1000",
+    pos: "center",
+  });
 
   useEffect(() => {
-    const fetchFeatured = async () => {
-      const { data } = await supabase
-        .from("watches")
-        .select("*")
-        .eq("is_featured", true)
-        .order("id", { ascending: false })
-        .limit(8);
+    const fetchHeroImages = async () => {
+      const { data } = await supabase.from("hero_settings").select("*");
+      if (data) {
+        const left = data.find((i) => i.id === 1);
+        const right = data.find((i) => i.id === 2);
 
-      if (data) setWatches(data);
+        if (left?.image_url)
+          setLeftData({ url: left.image_url, pos: left.position || "center" });
+        if (right?.image_url)
+          setRightData({
+            url: right.image_url,
+            pos: right.position || "center",
+          });
+      }
     };
-    fetchFeatured();
+    fetchHeroImages();
   }, []);
 
-  const handleLoadMore = async () => {
-    if (!isExpanded) {
-      setLoadingMore(true);
-      const { data } = await supabase
-        .from("watches")
-        .select("*")
-        .eq("is_featured", false)
-        .order("id", { ascending: false });
-
-      if (data) {
-        setWatches((prev) => [...prev, ...data]);
-        setIsExpanded(true);
-      }
-      setLoadingMore(false);
-    } else {
-      setWatches((prev) => prev.filter((w) => w.is_featured === true));
-      setIsExpanded(false);
-
-      const el = document.getElementById("watches-section");
-      if (el) el.scrollIntoView({ behavior: "smooth" });
-    }
-  };
-
-  // --- HÀM XỬ LÝ LIÊN HỆ ĐÃ SỬA ---
-  const handleContact = (watch) => {
-    if (watch.facebook_url) {
-      // 1. Nếu có link bài viết -> Mở bài viết
-      window.open(watch.facebook_url, "_blank");
-    } else {
-      // 2. Nếu trống -> Mở trang cá nhân FB
-      window.open("https://www.facebook.com/ducminh100793", "_blank");
-    }
+  const scrollTo = (id) => {
+    const element = document.getElementById(id);
+    if (element) element.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
-    <section
-      id="watches-section"
-      className="py-20 bg-black text-white relative border-t border-gold/10"
-    >
-      <div className="container mx-auto px-4">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <span className="text-gold text-sm tracking-[0.3em] uppercase">
-            Premium Selection
-          </span>
-          <h2 className="text-3xl md:text-5xl font-serif text-white mt-2">
+    <div className="relative h-[80vh] min-h-[600px] w-full flex flex-col md:flex-row overflow-hidden bg-black">
+      {/* CỘT TRÁI: WATCHES */}
+      <div className="relative w-full md:w-1/2 h-1/2 md:h-full group cursor-pointer overflow-hidden border-b-2 md:border-b-0 md:border-r-2 border-gold/20">
+        <div
+          className="absolute inset-0 bg-cover transition-transform duration-1000 group-hover:scale-110"
+          style={{
+            backgroundImage: `url('${leftData.url}')`,
+            backgroundPosition: leftData.pos, // <--- ÁP DỤNG VỊ TRÍ TẠI ĐÂY
+          }}
+        >
+          <div className="absolute inset-0 bg-black/50 group-hover:bg-black/30 transition-colors duration-500"></div>
+        </div>
+
+        <div className="absolute inset-0 flex flex-col justify-center items-center z-10 p-4 transform transition-transform duration-500 group-hover:-translate-y-2">
+          <h2 className="text-4xl md:text-5xl font-serif text-white font-bold tracking-[0.2em] mb-4 drop-shadow-lg text-center">
             TIMEPIECES
           </h2>
-          <div className="w-20 h-[1px] bg-gold mx-auto mt-4"></div>
-        </div>
-
-        {/* Grid Sản Phẩm */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          <AnimatePresence>
-            {watches.map((watch, idx) => (
-              <motion.div
-                key={watch.id}
-                layout
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.3 }}
-                className="group relative bg-[#111] border border-gray-800 hover:border-gold/50 transition-all duration-300 rounded-lg overflow-hidden"
-              >
-                {/* Ảnh */}
-                <div
-                  className="aspect-[3/4] overflow-hidden relative cursor-pointer"
-                  onClick={() => handleContact(watch)} // SỬA: Truyền cả object watch, không phải watch.name
-                >
-                  <img
-                    src={watch.image_url || "placeholder.jpg"}
-                    alt={watch.name}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  />
-                  {/* Nhãn HOT */}
-                  {watch.is_featured && (
-                    <div className="absolute top-2 left-2 bg-gold text-black text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
-                      <Star size={10} fill="black" /> HOT
-                    </div>
-                  )}
-
-                  {/* Nút Tư vấn */}
-                  <div className="absolute bottom-0 left-0 right-0 bg-blue-600/90 text-white p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300 flex items-center justify-center gap-2 font-bold cursor-pointer">
-                    <Facebook size={20} /> LIÊN HỆ FACEBOOK
-                  </div>
-                </div>
-
-                {/* Thông tin */}
-                <div className="p-4 text-center">
-                  <h3 className="text-lg font-serif tracking-wide text-gray-200 group-hover:text-gold transition-colors line-clamp-1">
-                    {watch.name}
-                  </h3>
-                  <p className="text-gold font-bold text-lg mt-1">
-                    {formatPrice(watch.price)}{" "}
-                    <span className="text-xs align-top">₫</span>
-                  </p>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
-
-        {/* Nút Xem tất cả */}
-        <div className="text-center mt-16">
           <button
-            onClick={handleLoadMore}
-            disabled={loadingMore}
-            className="group border border-gold text-gold px-12 py-3 uppercase text-xs tracking-[0.3em] hover:bg-gold hover:text-black transition-all duration-300 inline-flex items-center gap-2 font-bold"
+            onClick={(e) => {
+              e.stopPropagation();
+              scrollTo("watches-section");
+            }}
+            className="border border-white/50 text-white px-6 py-2 hover:bg-gold hover:border-gold hover:text-black transition-all duration-300 uppercase text-xs tracking-[0.3em]"
           >
-            {loadingMore ? (
-              "Đang tải..."
-            ) : isExpanded ? (
-              <>
-                Thu gọn{" "}
-                <ChevronUp
-                  size={16}
-                  className="group-hover:-translate-y-1 transition-transform"
-                />
-              </>
-            ) : (
-              <>
-                Xem bộ sưu tập đầy đủ{" "}
-                <ChevronDown
-                  size={16}
-                  className="group-hover:translate-y-1 transition-transform"
-                />
-              </>
-            )}
+            Explore Collection
           </button>
         </div>
       </div>
-    </section>
+
+      {/* CỘT PHẢI: COFFEE */}
+      <div className="relative w-full md:w-1/2 h-1/2 md:h-full group cursor-pointer overflow-hidden border-t-2 md:border-t-0 md:border-l-2 border-gold/20">
+        <div
+          className="absolute inset-0 bg-cover transition-transform duration-1000 group-hover:scale-110"
+          style={{
+            backgroundImage: `url('${rightData.url}')`,
+            backgroundPosition: rightData.pos, // <--- ÁP DỤNG VỊ TRÍ TẠI ĐÂY
+          }}
+        >
+          <div className="absolute inset-0 bg-black/50 group-hover:bg-black/30 transition-colors duration-500"></div>
+        </div>
+
+        <div className="absolute inset-0 flex flex-col justify-center items-center z-10 p-4 transform transition-transform duration-500 group-hover:-translate-y-2">
+          <h2 className="text-4xl md:text-5xl font-serif text-white font-bold tracking-[0.2em] mb-4 drop-shadow-lg text-center">
+            COFFEE VIBE
+          </h2>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              scrollTo("coffee-section");
+            }}
+            className="border border-white/50 text-white px-6 py-2 hover:bg-gold hover:border-gold hover:text-black transition-all duration-300 uppercase text-xs tracking-[0.3em]"
+          >
+            Visit Coffee Shop
+          </button>
+        </div>
+      </div>
+
+      {/* LOGO Ở GIỮA (Giữ nguyên) */}
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-30">
+        <div className="absolute inset-0 bg-gold blur-[30px] opacity-20 rounded-full animate-pulse"></div>
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 0.8 }}
+          className="group relative w-32 h-32 md:w-44 md:h-44 rounded-full border-[4px] border-gold shadow-[0_0_30px_rgba(212,175,55,0.4)] bg-black overflow-hidden flex items-center justify-center cursor-pointer transition-transform duration-300 hover:scale-110"
+        >
+          <img
+            src={logo}
+            alt="Center Logo"
+            className="w-[98%] h-[98%] object-cover rounded-full transition-transform duration-700 ease-in-out group-hover:rotate-[360deg]"
+          />
+        </motion.div>
+      </div>
+    </div>
   );
 };
 
-export default FeaturedWatches;
+export default HeroSplit;

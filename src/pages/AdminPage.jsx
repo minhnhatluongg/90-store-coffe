@@ -9,24 +9,27 @@ import {
   Settings,
   Layout,
   Image as ImageIcon,
-  CheckCircle,
   Grid,
   XCircle,
   Star,
+  ArrowUp,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  AlignCenter,
 } from "lucide-react";
 
-// --- COMPONENT THẺ SẢN PHẨM (DÙNG CHUNG CHO WATCHES & COFFEE) ---
+// --- COMPONENT THẺ SẢN PHẨM ---
 const AdminProductCard = ({ item, tableName, onReload }) => {
   const [name, setName] = useState(item.name);
   const [price, setPrice] = useState(item.price);
   const [description, setDescription] = useState(item.description || "");
   const [isFeatured, setIsFeatured] = useState(item.is_featured || false);
-  const [fbLink, setFbLink] = useState(item.facebook_url || ""); // Link FB riêng cho đồng hồ
+  const [fbLink, setFbLink] = useState(item.facebook_url || "");
 
   const [isChanged, setIsChanged] = useState(false);
   const [updating, setUpdating] = useState(false);
 
-  // Kiểm tra xem có thay đổi dữ liệu không
   useEffect(() => {
     if (
       name !== item.name ||
@@ -40,12 +43,11 @@ const AdminProductCard = ({ item, tableName, onReload }) => {
     }
   }, [name, price, description, fbLink, item]);
 
-  // Hàm Update thông tin
   const handleUpdate = async () => {
     setUpdating(true);
     try {
       const payload = { name, price, description };
-      if (tableName === "watches") payload.facebook_url = fbLink; // Chỉ đồng hồ mới update link FB
+      if (tableName === "watches") payload.facebook_url = fbLink;
 
       const { error } = await supabase
         .from(tableName)
@@ -62,29 +64,26 @@ const AdminProductCard = ({ item, tableName, onReload }) => {
     }
   };
 
-  // Hàm Xóa sản phẩm
   const handleDelete = async () => {
     if (!confirm("Xóa sản phẩm này vĩnh viễn?")) return;
     await supabase.from(tableName).delete().eq("id", item.id);
     onReload();
   };
 
-  // Hàm Bật/Tắt hiển thị trang chủ (Chỉ cho Watches)
   const toggleFeatured = async () => {
     try {
       const newValue = !isFeatured;
-      setIsFeatured(newValue); // Update UI ngay cho mượt
+      setIsFeatured(newValue);
       await supabase
         .from(tableName)
         .update({ is_featured: newValue })
         .eq("id", item.id);
     } catch (err) {
-      setIsFeatured(!isFeatured); // Revert nếu lỗi
+      setIsFeatured(!isFeatured);
       alert("Lỗi: " + err.message);
     }
   };
 
-  // Hàm Gỡ ảnh
   const handleRemoveImage = async () => {
     if (!confirm("Gỡ ảnh khỏi sản phẩm này?")) return;
     await supabase
@@ -94,7 +93,6 @@ const AdminProductCard = ({ item, tableName, onReload }) => {
     onReload();
   };
 
-  // Hàm Đổi ảnh
   const handleChangeImage = async (file) => {
     if (!file) return;
     const fileName = `${Date.now()}-${file.name}`;
@@ -115,13 +113,10 @@ const AdminProductCard = ({ item, tableName, onReload }) => {
           : "border-gray-200"
       }`}
     >
-      {/* HEADER CARD: ID & FEATURED */}
       <div className="flex justify-between items-center pb-2 border-b border-gray-100">
         <span className="text-[10px] font-bold text-gray-400 uppercase">
           ID: {item.id}
         </span>
-
-        {/* Nút Ngôi Sao (Chỉ hiện cho Đồng Hồ) */}
         {tableName === "watches" && (
           <button
             onClick={toggleFeatured}
@@ -130,7 +125,7 @@ const AdminProductCard = ({ item, tableName, onReload }) => {
                 ? "bg-gold text-black shadow-sm"
                 : "bg-gray-100 text-gray-400 hover:bg-gray-200"
             }`}
-            title={isFeatured ? "Đang hiện trang chủ" : "Đang ẩn"}
+            title={isFeatured ? "Đang hiện" : "Đang ẩn"}
           >
             {isFeatured ? <Star size={12} fill="black" /> : <Star size={12} />}
             {isFeatured ? "Hiện" : "Ẩn"}
@@ -138,7 +133,6 @@ const AdminProductCard = ({ item, tableName, onReload }) => {
         )}
       </div>
 
-      {/* ẢNH SẢN PHẨM */}
       <div className="relative w-full h-40 bg-gray-100 rounded overflow-hidden group/img border border-gray-200">
         {item.image_url ? (
           <img src={item.image_url} className="w-full h-full object-cover" />
@@ -147,7 +141,6 @@ const AdminProductCard = ({ item, tableName, onReload }) => {
             No Image
           </div>
         )}
-
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 flex items-center justify-center gap-3 transition-opacity">
           <label
             htmlFor={`p-img-${item.id}`}
@@ -172,7 +165,6 @@ const AdminProductCard = ({ item, tableName, onReload }) => {
         </div>
       </div>
 
-      {/* INPUTS EDIT */}
       <div className="flex flex-col gap-2">
         <input
           value={name}
@@ -186,7 +178,6 @@ const AdminProductCard = ({ item, tableName, onReload }) => {
           className="w-full border p-2 rounded text-sm bg-gray-50 outline-none focus:border-gold"
           placeholder="Giá tiền"
         />
-
         {tableName === "coffees" && (
           <textarea
             value={description}
@@ -196,7 +187,6 @@ const AdminProductCard = ({ item, tableName, onReload }) => {
             placeholder="Mô tả món"
           />
         )}
-
         {tableName === "watches" && (
           <input
             value={fbLink}
@@ -207,7 +197,6 @@ const AdminProductCard = ({ item, tableName, onReload }) => {
         )}
       </div>
 
-      {/* ACTIONS */}
       <div className="flex gap-2 mt-auto pt-2 border-t border-gray-100">
         {isChanged ? (
           <button
@@ -241,7 +230,7 @@ const AdminPage = () => {
   const [activeTab, setActiveTab] = useState("watches");
   const [items, setItems] = useState([]);
 
-  // State Form Thêm Mới
+  // Form State
   const [newName, setNewName] = useState("");
   const [newPrice, setNewPrice] = useState("");
   const [newDesc, setNewDesc] = useState("");
@@ -249,12 +238,11 @@ const AdminPage = () => {
   const [newImage, setNewImage] = useState(null);
   const [adding, setAdding] = useState(false);
 
-  // Galleries Data
+  // Gallery State
   const [serviceGallery, setServiceGallery] = useState({});
   const [coffeeGallery, setCoffeeGallery] = useState({});
   const [heroGallery, setHeroGallery] = useState({});
 
-  // --- AUTHENTICATION ---
   const handleLogin = async (e) => {
     e.preventDefault();
     const { data } = await supabase
@@ -270,18 +258,18 @@ const AdminPage = () => {
       alert("Sai thông tin đăng nhập!");
     }
   };
+
   const handleLogout = () => {
     setIsLoggedIn(false);
     localStorage.removeItem("isAdmin");
   };
+
   useEffect(() => {
     if (localStorage.getItem("isAdmin") === "true") setIsLoggedIn(true);
   }, []);
 
-  // --- FETCH DATA ---
   useEffect(() => {
     if (!isLoggedIn) return;
-    // Load dữ liệu tùy theo tab đang chọn
     if (activeTab === "hero") fetchHeroGallery();
     else if (activeTab === "services") fetchServiceGallery();
     else if (activeTab === "coffees") {
@@ -298,7 +286,6 @@ const AdminPage = () => {
     setItems(data || []);
   };
 
-  // Helper load gallery (dùng chung logic)
   const fetchGal = async (table, setter) => {
     const { data } = await supabase.from(table).select("*");
     if (data) {
@@ -310,9 +297,23 @@ const AdminPage = () => {
   const fetchServiceGallery = () =>
     fetchGal("service_gallery", setServiceGallery);
   const fetchCoffeeGallery = () => fetchGal("coffee_gallery", setCoffeeGallery);
-  const fetchHeroGallery = () => fetchGal("hero_settings", setHeroGallery);
 
-  // --- UPDATE GALLERY (Upload & Lưu) ---
+  // --- FETCH HERO (CÓ LẤY POSITION) ---
+  const fetchHeroGallery = async () => {
+    const { data } = await supabase.from("hero_settings").select("*");
+    if (data) {
+      const map = {};
+      data.forEach(
+        (i) =>
+          (map[i.id] = {
+            image_url: i.image_url,
+            position: i.position || "center", // Lấy position từ DB
+          })
+      );
+      setHeroGallery(map);
+    }
+  };
+
   const handleUpdateGallery = async (table, id, file, reloadFunc) => {
     if (!file) return;
     const fileName = `gallery-${table}-${id}-${Date.now()}`;
@@ -322,14 +323,29 @@ const AdminPage = () => {
     reloadFunc();
   };
 
-  // --- REMOVE GALLERY (Xóa ảnh về null) ---
+  // --- UPDATE HERO POSITION (TÍNH NĂNG MỚI) ---
+  const handleUpdatePosition = async (id, newPosition) => {
+    try {
+      await supabase
+        .from("hero_settings")
+        .update({ position: newPosition })
+        .eq("id", id);
+      // Cập nhật UI ngay lập tức
+      setHeroGallery((prev) => ({
+        ...prev,
+        [id]: { ...prev[id], position: newPosition },
+      }));
+    } catch (err) {
+      alert("Lỗi lưu vị trí: " + err.message);
+    }
+  };
+
   const handleRemoveGallery = async (table, id, reloadFunc) => {
     if (!confirm("Gỡ ảnh khỏi vị trí này?")) return;
     await supabase.from(table).update({ image_url: null }).eq("id", id);
     reloadFunc();
   };
 
-  // --- ADD NEW ITEM ---
   const handleAdd = async (e) => {
     e.preventDefault();
     setAdding(true);
@@ -350,7 +366,6 @@ const AdminPage = () => {
 
       await supabase.from(activeTab).insert([payload]);
 
-      // Reset form
       setNewName("");
       setNewPrice("");
       setNewDesc("");
@@ -365,7 +380,6 @@ const AdminPage = () => {
     }
   };
 
-  // --- GIAO DIỆN LOGIN ---
   if (!isLoggedIn)
     return (
       <div className="min-h-screen bg-black flex items-center justify-center p-4">
@@ -394,10 +408,8 @@ const AdminPage = () => {
       </div>
     );
 
-  // --- GIAO DIỆN ADMIN ---
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8 text-black font-sans">
-      {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 max-w-7xl mx-auto bg-white p-4 rounded-lg shadow-sm gap-4 border border-gray-100">
         <h1 className="text-xl font-bold uppercase flex items-center gap-2 tracking-wide">
           <span className="text-gold text-2xl">90</span> STORE MANAGER
@@ -464,19 +476,23 @@ const AdminPage = () => {
                 <h3 className="font-bold mb-4 uppercase text-gold tracking-widest">
                   {id === 1 ? "BANNER TRÁI (WATCHES)" : "BANNER PHẢI (COFFEE)"}
                 </h3>
+
+                {/* PREVIEW ẢNH */}
                 <div className="w-full h-80 bg-gray-100 mb-4 rounded overflow-hidden flex items-center justify-center border-2 border-dashed border-gray-300 relative">
-                  {heroGallery[id] ? (
-                    <img
-                      src={heroGallery[id]}
-                      className="w-full h-full object-cover"
-                    />
+                  {heroGallery[id]?.image_url ? (
+                    <div
+                      className="w-full h-full bg-cover bg-no-repeat"
+                      style={{
+                        backgroundImage: `url('${heroGallery[id].image_url}')`,
+                        backgroundPosition: heroGallery[id].position, // HIỂN THỊ POSITION ĐÚNG TRONG ADMIN LUÔN
+                      }}
+                    ></div>
                   ) : (
                     <span className="text-gray-400 text-xs">
                       Trống (Sẽ hiện ảnh mặc định)
                     </span>
                   )}
-                  {/* Nút Gỡ Ảnh */}
-                  {heroGallery[id] && (
+                  {heroGallery[id]?.image_url && (
                     <button
                       onClick={() =>
                         handleRemoveGallery(
@@ -491,25 +507,46 @@ const AdminPage = () => {
                     </button>
                   )}
                 </div>
-                <input
-                  type="file"
-                  id={`hero-${id}`}
-                  className="hidden"
-                  onChange={(e) =>
-                    handleUpdateGallery(
-                      "hero_settings",
-                      id,
-                      e.target.files[0],
-                      fetchHeroGallery
-                    )
-                  }
-                />
-                <label
-                  htmlFor={`hero-${id}`}
-                  className="bg-black text-white px-8 py-3 rounded cursor-pointer font-bold text-xs hover:bg-gray-800 tracking-wide"
-                >
-                  THAY ẢNH NỀN
-                </label>
+
+                <div className="flex gap-2 justify-center items-center">
+                  {/* Nút Upload */}
+                  <div>
+                    <input
+                      type="file"
+                      id={`hero-${id}`}
+                      className="hidden"
+                      onChange={(e) =>
+                        handleUpdateGallery(
+                          "hero_settings",
+                          id,
+                          e.target.files[0],
+                          fetchHeroGallery
+                        )
+                      }
+                    />
+                    <label
+                      htmlFor={`hero-${id}`}
+                      className="bg-black text-white px-4 py-2.5 rounded cursor-pointer font-bold text-xs hover:bg-gray-800 tracking-wide inline-block h-full content-center"
+                    >
+                      THAY ẢNH
+                    </label>
+                  </div>
+
+                  {/* MENU CHỌN VỊ TRÍ (DROPDOWN) */}
+                  {heroGallery[id]?.image_url && (
+                    <select
+                      value={heroGallery[id].position}
+                      onChange={(e) => handleUpdatePosition(id, e.target.value)}
+                      className="border border-gray-300 bg-white text-black text-xs font-bold px-2 py-2 rounded focus:border-gold outline-none cursor-pointer uppercase h-full"
+                    >
+                      <option value="center">Giữa</option>
+                      <option value="top">Trên</option>
+                      <option value="bottom">Dưới</option>
+                      <option value="left">Trái</option>
+                      <option value="right">Phải</option>
+                    </select>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -578,7 +615,6 @@ const AdminPage = () => {
         {activeTab === "coffees" && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-6">
-              {/* Form Thêm Món */}
               <div className="bg-white p-6 rounded-lg border border-gold/30 shadow-sm">
                 <h3 className="font-bold mb-4 flex items-center gap-2 uppercase tracking-wide text-sm">
                   <Coffee size={18} /> THÊM MÓN MỚI
@@ -629,7 +665,6 @@ const AdminPage = () => {
                   </button>
                 </form>
               </div>
-              {/* Danh sách */}
               <div>
                 <h3 className="font-bold text-gray-400 mb-3 text-xs uppercase tracking-wide">
                   MENU HIỆN TẠI ({items.length})
@@ -647,7 +682,6 @@ const AdminPage = () => {
               </div>
             </div>
 
-            {/* Phần 4 Ảnh Decor */}
             <div className="lg:col-span-1">
               <div className="bg-white p-5 rounded-lg shadow-sm sticky top-4 border border-gray-100">
                 <h3 className="font-bold mb-4 flex items-center gap-2 text-gold uppercase text-sm tracking-wide">
@@ -717,7 +751,6 @@ const AdminPage = () => {
         {/* --- TAB WATCHES --- */}
         {activeTab === "watches" && (
           <div className="space-y-8">
-            {/* Form Thêm Đồng Hồ */}
             <div className="bg-white p-6 rounded-lg border border-gold/30 shadow-sm">
               <h3 className="font-bold mb-4 flex items-center gap-2 uppercase tracking-wide text-sm">
                 <Watch size={18} /> THÊM ĐỒNG HỒ MỚI
@@ -769,7 +802,6 @@ const AdminPage = () => {
                 </button>
               </form>
 
-              {/* Input thêm Link FB (Optional khi thêm mới) */}
               <div className="mt-4">
                 <label className="text-[10px] font-bold text-gray-400 uppercase">
                   Link FB / Messenger (Tùy chọn)
@@ -783,7 +815,6 @@ const AdminPage = () => {
               </div>
             </div>
 
-            {/* Danh sách Đồng Hồ */}
             <div>
               <h3 className="font-bold text-gray-400 mb-4 text-xs uppercase tracking-wide">
                 DANH SÁCH ĐỒNG HỒ ({items.length})
